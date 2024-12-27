@@ -1,20 +1,24 @@
-# 使用 Node.js Alpine 版本作为基础镜像
-FROM node:alpine
+# 构建阶段
+FROM node:alpine AS builder
 
-# 设置工作目录
 WORKDIR /app
 
-# 复制 package.json 和 package-lock.json
 COPY package*.json ./
 
-# 安装依赖
 RUN npm install --production
 
-# 复制应用程序代码
 COPY . .
 
-# 暴露应用程序运行的端口
+# 最终阶段
+FROM node:alpine
+
+WORKDIR /app
+
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/server ./server
+COPY --from=builder /app/package*.json ./
+
+# 暴露端口
 EXPOSE 8081
 
-# 启动应用程序
 CMD ["node", "server/index.js"]
